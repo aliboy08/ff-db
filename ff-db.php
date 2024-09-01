@@ -11,4 +11,4 @@
 
 require 'class-ff-db.php';
 
-include 'test/init.php';
+// include 'test/init.php';
