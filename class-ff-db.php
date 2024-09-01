@@ -72,6 +72,20 @@ class FF_DB {
         return $query;
     }
 
+    function select($select, $args){
+
+        $this->args = $args;
+        global $wpdb;
+        
+        $query_after = $this->get_query_after($args);
+
+        $query = "SELECT {$select} FROM {$this->t_posts}{$query_after}";
+
+        $result = $wpdb->get_results($query);
+
+        return $result;
+    }
+
     function get_query_join($args){
 
         $term_id = $this->get_arg('term_id');
@@ -140,7 +154,7 @@ class FF_DB {
         }
 
         return $query;
-    } 
+    }
 
     function get_arg( $key ){
         return $this->args[$key] ?? $this->defaults[$key];
