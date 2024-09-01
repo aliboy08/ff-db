@@ -16,6 +16,8 @@ class FF_DB {
 
         global $wpdb;
 
+        $this->args = $args;
+
         $clause_join = $this->get_clause_join($args);
         $clause_where = $this->get_clause_where($args);
         $clause_end = $this->get_clause_end($args);
@@ -33,7 +35,10 @@ class FF_DB {
     }
 
     function get_count($args){
+        
         global $wpdb;
+
+        $this->args = $args;
 
         $clause_join = $this->get_clause_join($args);
         $clause_where = $this->get_clause_where($args);
@@ -49,6 +54,9 @@ class FF_DB {
     function get_clause_join($args){
 
         global $wpdb;
+
+        $term_id = $this->get_arg('term_id');
+        $meta_key = $this->get_arg('meta_key');
 
         $clause = '';
 
@@ -102,7 +110,7 @@ class FF_DB {
     }
 
     function get_arg( $key ){
-        return $this->$args[$key] ?? $this->defaults[$key];
+        return $this->args[$key] ?? $this->defaults[$key];
     }
 
 }

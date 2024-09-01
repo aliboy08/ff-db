@@ -1,7 +1,7 @@
 <?php
 /*
  * Plugin name: FF DB
- * Version: 1.0
+ * Version: 1.0.1
  * Description: Direct Database Queries
  * Plugin URI: https://www.fivebyfive.com.au/
  * Author: Five by Five
