@@ -1,6 +1,6 @@
 <?php
 class FF_DB {
-
+    
     public $args = [];
 
     public $defaults = [
@@ -10,20 +10,27 @@ class FF_DB {
         'meta_key' => null,
         'meta_value' => null,
         'limit' => null,
+        'orderby' => 'post_date',
+        'order' => 'DESC',
     ];
-
+    
+    public $t_posts;
+    public $t_term_relationships;
+    public $t_postmeta;
+    
+    function __construct() {
+        global $wpdb;
+        $this->t_posts = $wpdb->prefix .'posts';
+        $this->t_term_relationships = $wpdb->prefix .'term_relationships';
+        $this->t_postmeta = $wpdb->prefix .'postmeta';
+    }
+    
     function get_ids($args){
 
+        $this->args = $args;
         global $wpdb;
 
-        $this->args = $args;
-
-        $clause_join = $this->get_clause_join($args);
-        $clause_where = $this->get_clause_where($args);
-        $clause_end = $this->get_clause_end($args);
-
-        $query = "SELECT ID FROM {$wpdb->prefix}posts{$clause_join}{$clause_where}{$clause_end}";
-
+        $query = "SELECT ID FROM {$this->t_posts}{$this->query_after($args)}";
         $result = $wpdb->get_results($query);
 
         $ids = [];
@@ -35,43 +42,47 @@ class FF_DB {
     }
 
     function get_count($args){
-        
-        global $wpdb;
 
         $this->args = $args;
+        global $wpdb;
 
-        $clause_join = $this->get_clause_join($args);
-        $clause_where = $this->get_clause_where($args);
-        $clause_end = $this->get_clause_end($args);
-
-        $query = "SELECT count(ID) as count FROM {$wpdb->prefix}posts{$clause_join}{$clause_where}{$clause_end}";
-
+        $query = "SELECT count(ID) as count FROM {$this->t_posts}{$this->query_after($args)}";
         $result = $wpdb->get_results($query);
 
         return $result[0]->count;
     }
 
-    function get_clause_join($args){
+    function query_after($args){
 
-        global $wpdb;
+        $join = $this->get_query_join($args);
+        $where = $this->get_query_where($args);
+        $order = $this->get_query_order($args);
+        $end = $this->get_query_end($args);
+
+        $query = $join . $where . $order . $end;
+        
+        return $query;
+    }
+
+    function get_query_join($args){
 
         $term_id = $this->get_arg('term_id');
         $meta_key = $this->get_arg('meta_key');
 
-        $clause = '';
+        $query = '';
 
         if( $term_id !== null ) {
-            $clause .= " LEFT JOIN {$wpdb->prefix}term_relationships ON object_id = ID";
+            $query .= " LEFT JOIN {$this->t_term_relationships} ON object_id = ID";
         }
     
         if( $meta_key !== null ) {
-            $clause .= " LEFT JOIN {$wpdb->prefix}postmeta ON post_id = ID";
+            $query .= " LEFT JOIN {$this->t_postmeta} ON post_id = ID";
         }
 
-        return $clause;
+        return $query;
     }
 
-    function get_clause_where($args){
+    function get_query_where($args){
 
         $post_status = $this->get_arg('post_status');
         $post_type = $this->get_arg('post_type');
@@ -79,35 +90,49 @@ class FF_DB {
         $meta_key = $this->get_arg('meta_key');
         $meta_value = $this->get_arg('meta_value');
         
-        $clause = " WHERE post_status = '{$post_status}' AND post_type = '{$post_type}'";
+        $query = " WHERE post_status = '{$post_status}' AND post_type = '{$post_type}'";
 
         if( $term_id !== null ) {
-            $query .= " AND term_taxonomy_id = {$term_id}";
+            $query .= " AND {$this->t_term_relationships}.term_taxonomy_id = {$term_id}";
         }
     
         if( $meta_key !== null ) {
-            $query .= " AND meta_key = '{$meta_key}'";
+            $query .= " AND {$this->t_postmeta}.meta_key = '{$meta_key}'";
         }
     
         if( $meta_value !== null ) {
-            $query .= " AND meta_value = '{$meta_value}'";
+            $query .= " AND {$this->t_postmeta}.meta_value = '{$meta_value}'";
         }
         
-        return $clause;
+        return $query;
     }
 
-    function get_clause_end($args){
+    function get_query_end($args){
         
         $limit = $this->get_arg('limit');
 
-        $clause = '';
+        $query = '';
 
         if( $limit !== null ) {
             $query .= " LIMIT {$limit}";
         }
 
-        return $clause;
+        return $query;
     }
+
+    function get_query_order($args){
+
+        $orderby = $this->get_arg('orderby');
+        $order = $this->get_arg('order');
+
+        $query = '';
+
+        if( $orderby !== null ) {
+            $query .= " ORDER BY {$this->t_posts}.{$orderby} {$order}";
+        }
+
+        return $query;
+    } 
 
     function get_arg( $key ){
         return $this->args[$key] ?? $this->defaults[$key];
