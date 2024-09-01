@@ -30,7 +30,9 @@ class FF_DB {
         $this->args = $args;
         global $wpdb;
 
-        $query = "SELECT ID FROM {$this->t_posts}{$this->query_after($args)}";
+        $query_after = $this->get_query_after($args);
+
+        $query = "SELECT ID FROM {$this->t_posts}{$query_after}";
         $result = $wpdb->get_results($query);
 
         $ids = [];
@@ -46,13 +48,19 @@ class FF_DB {
         $this->args = $args;
         global $wpdb;
 
-        $query = "SELECT count(ID) as count FROM {$this->t_posts}{$this->query_after($args)}";
+        $join = $this->get_query_join($args);
+        $where = $this->get_query_where($args);
+
+        $query_after = $join . $where;
+        
+        $query = "SELECT count(ID) as count FROM {$this->t_posts}{$query_after}";
+
         $result = $wpdb->get_results($query);
 
         return $result[0]->count;
     }
 
-    function query_after($args){
+    function get_query_after($args){
 
         $join = $this->get_query_join($args);
         $where = $this->get_query_where($args);
@@ -136,6 +144,12 @@ class FF_DB {
 
     function get_arg( $key ){
         return $this->args[$key] ?? $this->defaults[$key];
+    }
+
+    function get_pages( $posts_per_page, $args ){
+        $count = $this->get_count( $args );
+        $pages_count = ceil($count / $posts_per_page);
+        return $pages_count;
     }
 
 }
